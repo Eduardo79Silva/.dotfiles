@@ -1,89 +1,115 @@
-export XDG_CONFIG_HOME=$HOME/.config
-VIM="nvim"
+# ~/.zsh_profile
 
-PERSONAL=$XDG_CONFIG_HOME/personal
-source $PERSONAL/env
-for i in `find -L $PERSONAL`; do
-    source $i
-done
-source /usr/share/doc/fzf/examples/key-bindings.zsh
-source /usr/share/doc/fzf/examples/completion.zsh
+# —————— Core environment vars ——————
+export XDG_CONFIG_HOME="$HOME/.config"
+VIM="nvim"
 
 export NRDP="$HOME/work/nrdp"
 export NRDP_BUILDS="$HOME/work/builds"
 export CC="clang-12"
 export CXX="clang++-12"
 export PYTHONBREAKPOINT="pudb.set_trace"
-export GOPATH=$HOME/go
+export GOPATH="$HOME/go"
 export DARWINS_DIR="$HOME/work/darwins"
 export TVUI="$HOME/work/tvui"
-export API_TOOLS=$HOME/work/tools/edge/scripts
-export GIT_EDITOR=$VIM
-export EOSIO_INSTALL_DIR=$HOME/personal/eos
-export NF_IDFILE=$HOME/.idfile
+export API_TOOLS="$HOME/work/tools/edge/scripts"
+export GIT_EDITOR="$VIM"
+export EOSIO_INSTALL_DIR="$HOME/personal/eos"
+export NF_IDFILE="$HOME/.idfile"
 export DENO_INSTALL="$HOME/.deno"
 export N_PREFIX="$HOME/.local/n"
-export DOTFILES=$HOME/.dotfiles
-export BOGART=$HOME/work/bogart
+export DOTFILES="$HOME/.dotfiles"
+export BOGART="$HOME/work/bogart"
 
-addToPathFront $HOME/.zig
-addToPathFront $HOME/.local/.npm-global/bin
-addToPathFront $HOME/.local/scripts
-addToPathFront $HOME/.local/bin
-addToPathFront $HOME/.local/n/bin/
-addToPathFront $HOME/.local/go/bin
-addToPathFront $HOME/go/bin
-addToPathFront $HOME/personal/sumneko/bin
-addToPathFront $HOME/.deno/bin
+# —————— fzf key-bindings & completion ——————
+# (make sure you've installed or downloaded these into ~/.fzf)
+if [[ -f "$HOME/.fzf/key-bindings.zsh" ]]; then
+  source "$HOME/.fzf/key-bindings.zsh"
+fi
+if [[ -f "$HOME/.fzf/completion.zsh" ]]; then
+  source "$HOME/.fzf/completion.zsh"
+fi
 
-# Where should I put you?
-bindkey -s ^f "tmux-sessionizer\n"
+# —————— Deduplicated PATH prepends ——————
+# Turn $PATH into an array named `path`, with unique entries
+typeset -U path
 
+# Prepend everything in one shot
+path=( 
+  "$HOME/.zig"
+  "$HOME/.local/.npm-global/bin"
+  "$HOME/.local/scripts"
+  "$HOME/.local/bin"
+  "/opt/nvim-linux-x86_64/bin"
+  "/usr/bin/"
+  "$HOME/.local/n/bin"
+  "$HOME/.local/go/bin"
+  "$HOME/go/bin"
+  "$HOME/personal/sumneko/bin"
+  "$HOME/.deno/bin"
+  "/usr/local/sbin"
+  "/usr/local/bin"
+  "/usr/sbin"
+  "/sbin"
+  "/bin"
+  "/usr/games"
+  "/usr/local/games"
+  "/snap/bin"
+  $path            # finally, the existing entries
+)
+
+# At this point $PATH is automatically updated from the `path` array.
+#
+source ~/.nvm/nvm.sh
+
+
+# —————— Custom keybindings ——————
+# bind Ctrl-f to your tmux sessionizer
+bindkey -s '^f' 'tmux-sessionizer\n'
+
+# —————— Utility functions ——————
 catr() {
-    tail -n "+$1" $3 | head -n "$(($2 - $1 + 1))"
+  tail -n "+$1" "$3" | head -n "$(( $2 - $1 + 1 ))"
 }
 
 validateYaml() {
-    python -c 'import yaml,sys;yaml.safe_load(sys.stdin)' < $1
+  python -c 'import yaml,sys; yaml.safe_load(sys.stdin)' < "$1"
 }
 
 goWork() {
-    cp ~/.npm_work_rc ~/.npmrc
+  cp ~/.npm_work_rc ~/.npmrc
 }
 
 goPersonal() {
-    cp ~/.npm_personal_rc ~/.npmrc
+  cp ~/.npm_personal_rc ~/.npmrc
 }
 
 addThrottle() {
-    local kbs="kbps"
-    echo $kbs
-    echo "About to throttle to $1 $kbs"
-    echo "sudo tc qdisc add dev wlp59s0 handle 1: root htb default 11"
-    echo "sudo tc class add dev wlp59s0 parent 1: classid 1:1 htb rate $1$kbs"
-    echo "sudo tc class add dev wlp59s0 parent 1:1 classid 1:11 htb rate $1$kbs"
-    sudo tc qdisc add dev wlp59s0 handle 1: root htb default 11
-    sudo tc class add dev wlp59s0 parent 1: classid 1:1 htb rate $1$kbs
-    sudo tc class add dev wlp59s0 parent 1:1 classid 1:11 htb rate $1$kbs
+  local rate="${1}kbps"
+  sudo tc qdisc add dev wlp59s0 handle 1: root htb default 11
+  sudo tc class add dev wlp59s0 parent 1: classid 1:1 htb rate "$rate"
+  sudo tc class add dev wlp59s0 parent 1:1 classid 1:11 htb rate "$rate"
 }
 
 removeThrottle() {
-    sudo tc qdisc del dev wlp59s0 root
+  sudo tc qdisc del dev wlp59s0 root
 }
 
 cat1Line() {
-    cat $1 | tr -d "\n"
+  tr -d '\n' < "$1"
 }
 
 ioloop() {
-    FIFO=$(mktemp -u /tmp/ioloop_$$_XXXXXX ) &&
-    trap "rm -f $FIFO" EXIT &&
-    mkfifo $FIFO &&
-    ( : <$FIFO & ) &&    # avoid deadlock on opening pipe
-    exec >$FIFO <$FIFO
+  local FIFO
+  FIFO=$(mktemp -u /tmp/ioloop_"$$"_XXXXXX)
+  trap 'rm -f "$FIFO"' EXIT
+  mkfifo "$FIFO"
+  ( : <"$FIFO" & )    # avoid deadlock on opening
+  exec >"$FIFO" <"$FIFO"
 }
 
 eslintify() {
-    cat $1 > /tmp/file_to_eslint
-    npx eslint
+  cp "$1" /tmp/file_to_eslint
+  npx eslint /tmp/file_to_eslint
 }
+

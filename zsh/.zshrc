@@ -101,38 +101,53 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 source ~/.zsh_profile
 
-alias luamake=/home/mpaulson/personal/lua-language-server/3rd/luamake/luamake
+alias luamake=/home/eduardo/personal/lua-language-server/3rd/luamake/luamake
 
 # bun completions
-[ -s "/home/mpaulson/.bun/_bun" ] && source "/home/mpaulson/.bun/_bun"
+[ -s "/home/eduardo/.bun/_bun" ] && source "/home/mpaulson/.bun/_bun"
+
 
 # Bun
-export BUN_INSTALL="/home/mpaulson/.bun"
+export BUN_INSTALL="/home/eduardo/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
 # Bun
-export BUN_INSTALL="/home/mpaulson/.bun"
+export BUN_INSTALL="/home/eduardo/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
 # pnpm
-export PNPM_HOME="/home/mpaulson/.local/share/pnpm"
+export PNPM_HOME="/home/eduardo/.local/share/pnpm"
 export PATH="$PNPM_HOME:$PATH"
 # pnpm end
 # Turso
-export PATH="/home/mpaulson/.turso:$PATH"
+export PATH="/home/eduardo/.turso:$PATH"
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/home/mpaulson/.local/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+__conda_setup="$('/home/eduardo/.local/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
 if [ $? -eq 0 ]; then
     eval "$__conda_setup"
 else
-    if [ -f "/home/mpaulson/.local/anaconda3/etc/profile.d/conda.sh" ]; then
-        . "/home/mpaulson/.local/anaconda3/etc/profile.d/conda.sh"
+    if [ -f "/home/eduardo/.local/anaconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/eduardo/.local/anaconda3/etc/profile.d/conda.sh"
     else
-        export PATH="/home/mpaulson/.local/anaconda3/bin:$PATH"
+        export PATH="/home/eduardo/.local/anaconda3/bin:$PATH"
     fi
 fi
 unset __conda_setup
 # <<< conda initialize <<<
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+reload_zshrc_tmux() {
+  source ~/.zshrc
+  if ! command -v tmux >/dev/null; then
+    echo "tmux not found in PATH"
+    return 1
+  fi
+  tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index}' \
+    | while read pane; do
+        tmux send-keys -t "$pane" "source ~/.zshrc" C-m
+      done
+}
 
